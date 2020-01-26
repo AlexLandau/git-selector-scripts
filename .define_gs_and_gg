@@ -19,6 +19,8 @@ function gg {
       echo "For example: running 'gg 5,7,10-15 git add' will run 'git add file1 file2 ...',"
       echo "passing it the files on the 5th, 7th, and 10th through 15th (inclusive) lines."
       echo
+      echo "Remember to rerun gs before each gg, as the line numbers may have changed."
+      echo
       echo "Note: This is a Bash function that was intended to be pasted into your ~/.bashrc"
       echo "or ~/.bash_profile file. It's not an actual binary or built-in Bash command."
     }
