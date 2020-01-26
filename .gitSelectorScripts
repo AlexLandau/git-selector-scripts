@@ -1,0 +1,115 @@
+function gs2 {
+  local status="$(git -c color.status=always status)"
+  local line_number=1
+
+  while IFS= read -r line; do
+    echo "$line_number  $line"
+    line_number=$(($line_number + 1))
+  done <<< "$status"
+}
+
+function gg {
+  # Use a subshell to prevent leaking the internal functions
+  (
+    function usage {
+      echo
+      echo "Usage: gg [line-numbers] [command]"
+      echo
+      echo "Indices correspond to the line numbers seen when running gs."
+      echo "For example: running 'gg 5,7,10-15 git add' will run 'git add file1 file2 ...',"
+      echo "passing it the files on the 5th, 7th, and 10th through 15th (inclusive) lines."
+      echo
+      echo "Note: This is a Bash function that was intended to be pasted into your ~/.bashrc"
+      echo "or ~/.bash_profile file. It's not an actual binary or built-in Bash command."
+    }
+
+    if [[ "$#" -eq 0 ]]; then
+      usage
+      exit 1   # exits the gg function's subshell only
+    fi
+
+    local wanted_line_numbers=$1
+
+    # Check if they're trying to use an argument starting with - (e.g. -h, --help...)
+    if [[ "${wanted_line_numbers:0:1}" == "-" ]]; then
+      usage
+      exit 1   # exits the gg function's subshell only
+    fi
+
+    ##### Store all the lines from git status into a status_lines array
+
+    local status="$(git status)"
+    local line_number=1
+    declare -a status_lines
+    while IFS= read -r line; do
+      status_lines[$line_number]=$line
+      line_number=$(($line_number + 1))
+    done <<< "$status"
+
+    ##### Turn the line-numbers argument into a list of files
+
+    local files_list=""
+    function add_line_to_list {
+      local line="$1"
+      local cleaned_line=""
+      if [[ "$line" =~ ":" ]]; then
+        cleaned_line="$(echo "$line" | sed "s/.*:[ \t]*//")"
+        # echo "cleaned line with colon: $cleaned_line"
+      else
+        cleaned_line="$(echo "$line" | sed "s/[ \t]*//")"
+        # echo "cleaned line: $cleaned_line"
+      fi
+
+      # Handle the case of "  modified: foo -> bar"
+      if [[ "$cleaned_line" =~ " -> " ]]; then
+        first_file="$(expr match "$cleaned_line" '\(.*\) -> .*')"
+        second_file="$(expr match "$cleaned_line" '.* -> \(.*\)')"
+        # echo "first file: $first_file"
+        # echo "second file: $second_file"
+        files_list="$files_list \"$first_file\" \"$second_file\""
+      else
+        files_list="$files_list \"$cleaned_line\""
+      fi
+    }
+
+    while IFS=',' read -ra wanted_line_numbers_array; do
+      for wanted_line_numbers_section in "${wanted_line_numbers_array[@]}"; do
+        # echo "the numbers section: $wanted_line_numbers_section"
+        if [[ "$wanted_line_numbers_section" =~ "-" ]]; then
+          local range_start="$(expr match "$wanted_line_numbers_section" '\([0-9][0-9]*\)-.*')"
+          # echo "range start: $range_start"
+          local range_end="$(expr match "$wanted_line_numbers_section" '.*-\([0-9][0-9]*\)')"
+          # echo "range end: $range_end"
+          if [[ -n "$range_start" && -n "$range_end" && "$range_start" -le "$range_end" ]]; then
+            # echo "valid range from $range_start to $range_end"
+            local range_line_number="$range_start"
+            while [[ "$range_line_number" -le "$range_end" ]]; do
+              # echo "range line number: $range_line_number"
+              # echo "the line: ${status_lines[${range_line_number}]}"
+              add_line_to_list "${status_lines[${range_line_number}]}"
+              range_line_number=$(($range_line_number + 1))
+            done
+          else
+            echo "invalid range $wanted_line_numbers_section"
+            exit 1   # exits the gg function's subshell only
+          fi
+        else
+          add_line_to_list "${status_lines[${wanted_line_numbers_section}]}"
+        fi
+      done
+    done <<< "$wanted_line_numbers"
+
+    ##### Use the files to run the user's action
+
+    # If they aren't actually doing anything with the files, prompt usage
+    if [[ "$#" -eq 1 ]]; then
+      echo "selected files: $files_list"
+      usage
+      exit 1   # exits the gg function's subshell only
+    fi
+
+    shift   # removes the line-numbers argument from $@
+    echo "Running $@ $files_list"
+    eval "$@ $files_list"
+  )
+}
