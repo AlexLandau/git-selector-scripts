@@ -23,6 +23,7 @@ function gg {
       echo
       echo "Note: This is a Bash function that was intended to be pasted into your ~/.bashrc"
       echo "or ~/.bash_profile file. It's not an actual binary or built-in Bash command."
+      echo "The code originated from: https://github.com/AlexLandau/git-selector-scripts"
     }
 
     if [[ "$#" -eq 0 ]]; then
