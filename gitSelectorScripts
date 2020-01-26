@@ -1,4 +1,4 @@
-function gs2 {
+function gs {
   local status="$(git -c color.status=always status)"
   local line_number=1
 
