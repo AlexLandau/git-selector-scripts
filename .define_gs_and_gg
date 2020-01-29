@@ -65,8 +65,8 @@ function gg {
 
       # Handle the case of "  modified: foo -> bar"
       if [[ "$cleaned_line" =~ " -> " ]]; then
-        first_file="$(expr match "$cleaned_line" '\(.*\) -> .*')"
-        second_file="$(expr match "$cleaned_line" '.* -> \(.*\)')"
+        first_file="$(expr "$cleaned_line" : '\(.*\) -> .*')"
+        second_file="$(expr "$cleaned_line" : '.* -> \(.*\)')"
         # echo "first file: $first_file"
         # echo "second file: $second_file"
         files_list="$files_list \"$first_file\" \"$second_file\""
@@ -79,9 +79,9 @@ function gg {
       for wanted_line_numbers_section in "${wanted_line_numbers_array[@]}"; do
         # echo "the numbers section: $wanted_line_numbers_section"
         if [[ "$wanted_line_numbers_section" =~ "-" ]]; then
-          local range_start="$(expr match "$wanted_line_numbers_section" '\([0-9][0-9]*\)-.*')"
+          local range_start="$(expr "$wanted_line_numbers_section" : '\([0-9][0-9]*\)-.*')"
           # echo "range start: $range_start"
-          local range_end="$(expr match "$wanted_line_numbers_section" '.*-\([0-9][0-9]*\)')"
+          local range_end="$(expr "$wanted_line_numbers_section" : '.*-\([0-9][0-9]*\)')"
           # echo "range end: $range_end"
           if [[ -n "$range_start" && -n "$range_end" && "$range_start" -le "$range_end" ]]; then
             # echo "valid range from $range_start to $range_end"
