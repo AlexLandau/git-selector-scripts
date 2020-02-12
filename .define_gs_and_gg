@@ -56,10 +56,10 @@ function gg {
       local line="$1"
       local cleaned_line=""
       if [[ "$line" =~ ":" ]]; then
-        cleaned_line="$(echo "$line" | sed "s/.*:[ \t]*//")"
+        cleaned_line="$(echo "$line" | sed "s/.*:[[:space:]]*//")"
         # echo "cleaned line with colon: $cleaned_line"
       else
-        cleaned_line="$(echo "$line" | sed "s/[ \t]*//")"
+        cleaned_line="$(echo "$line" | sed "s/[[:space:]]*//")"
         # echo "cleaned line: $cleaned_line"
       fi
 
